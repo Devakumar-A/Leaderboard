@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATHORIA MINI GAMES</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; margin: 0; padding: 20px; }
+        h1 { font-size: 3em; text-transform: uppercase; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+        table { width: 90%; max-width: 600px; margin: 20px auto; border-collapse: collapse; background: #222; border-radius: 10px; overflow: hidden; }
+        th, td { padding: 15px; border-bottom: 1px solid #444; text-align: center; }
+        th { background-color: #333; }
+        tr:hover { background-color: #444; }
+        button { background-color: #ff00ff; border: none; padding: 10px 20px; color: white; font-size: 1.2em; cursor: pointer; border-radius: 5px; margin-top: 20px; }
+        button:hover { background-color: #cc00cc; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; vertical-align: middle; }
+        .player-name { display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <h1>Mini Games</h1>
+    <h2>Leaderboard</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Name</th>
+                <th>Time (s)</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+    </table>
+    <button onclick="addPlayer()">Add Player</button>
+
+    <script>
+        const API_URL = "https://leaderboard-7602b-default-rtdb.asia-southeast1.firebasedatabase.app/leaderboard.json";
+
+        async function fetchLeaderboard() {
+            try {
+                let response = await fetch(API_URL);
+                let data = await response.json();
+                let players = data ? Object.values(data).sort((a, b) => a.time - b.time) : [];
+                updateLeaderboard(players);
+            } catch (error) {
+                console.error("Error fetching leaderboard:", error);
+            }
+        }
+
+        async function addPlayer() {
+            let name = prompt("Enter player name:");
+            let time = prompt("Enter time to complete (in seconds):");
+            if (!name || !time) return;
+
+            let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
+            let playerData = { name, time: parseFloat(time), avatar: avatarUrl };
+
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(playerData),
+                    headers: { "Content-Type": "application/json" }
+                });
+                fetchLeaderboard(); // Refresh leaderboard only when a new player is added
+            } catch (error) {
+                console.error("Error adding player:", error);
+            }
+        }
+
+        function updateLeaderboard(players) {
+            let tbody = document.getElementById("leaderboard-body");
+            tbody.innerHTML = "";
+            players.forEach((player, index) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td class="player-name">
+                            <img src="${player.avatar}" class="avatar" alt="Avatar"> 
+                            ${player.name}
+                        </td>
+                        <td>${player.time}</td>
+                    </tr>`;
+            });
+        }
+
+        window.onload = fetchLeaderboard;
+    </script>
+</body>
+</html>
